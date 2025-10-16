@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Contact DR ROOTS DC</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; max-width: 680px; }
+    label { display:block; margin-top: .75rem; }
+    input, textarea, button { width:100%; padding:.75rem; margin-top:.25rem; }
+    button { cursor:pointer }
+    .ok { color: green }
+    .err { color: #b00020 }
+  </style>
+</head>
+<body>
+  <h1>Contact Us</h1>
+
+  <form id="contactForm">
+    <label>Name* <input name="name" required /></label>
+    <label>Email* <input type="email" name="email" required /></label>
+    <label>Phone <input name="phone" /></label>
+    <label>Message* <textarea name="message" rows="6" required></textarea></label>
+    <button type="submit">Send</button>
+    <p id="status"></p>
+  </form>
+
+  <script>
+    const f = document.getElementById("contactForm");
+    const statusEl = document.getElementById("status");
+    f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.className = ""; statusEl.textContent = "Sending...";
+      const data = Object.fromEntries(new FormData(f).entries());
+      try {
+        const res = await fetch("/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const json = await res.json();
+        if (json.ok) {
+          statusEl.className = "ok";
+          statusEl.textContent = "Message sent. Thank you!";
+          f.reset();
+        } else {
+          throw new Error(json.error || "Send failed");
+        }
+      } catch (err) {
+        statusEl.className = "err";
+        statusEl.textContent = err.message || "Something went wrong.";
+      }
+    });
+  </script>
+</body>
+</html>
