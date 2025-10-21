@@ -10,6 +10,16 @@
     "experience": "8+ years"
   },
   {
+    "id": "3",
+    "name": "Dr. Sreelakshmi C.",
+    "title": "BDS, MDS",
+    "specialization": "Periodontist",
+    "credentials": "BDS, MDS (Periodontist)",
+    "bio": "Dr. Sreelekshmi is a highly skilled periodontist and laser dentistry expert dedicated to helping patients achieve confident, healthy smiles. Her passion lies in promoting optimal gum health and enhancing dental esthetics through personalized, patient-centered care. With advanced expertise in laser procedures and a gentle, compassionate approach, she ensures every patient receives exceptional results and a truly comfortable dental experience.",
+    "image": "/assets/generated_images/Dr._Priya_Menon_portrait_783e4a1a.png",
+    "experience": "8+ years"
+  },
+  {
     "id": "2",
     "name": "Dr. Sreejith C.K.",
     "title": "BDS, MDS",
@@ -17,16 +27,6 @@
     "credentials": "BDS, MDS",
     "bio": "Experienced dental surgeon with focus on preventive care, restorative treatments and patient comfort using modern techniques and materials.",
     "image": "/assets/generated_images/Dr._Rajesh_Kumar_portrait_4bef460c.png",
-    "experience": "8+ years"
-  },
-  {
-    "id": "3",
-    "name": "Dr. Sreelakshmi C.",
-    "title": "BDS, MDS",
-    "specialization": "Periodontist",
-    "credentials": "BDS, MDS (Periodontist)",
-    "bio": "Dr. Sreelekshmi is a highly skilled periodontist and laser dentistry expert dedicated to helping patients achieve confident, healthy smiles. Her passion lies in promoting optimal gum health and enhancing dental esthetics through personalized, patient-centered care. With advanced expertise in laser procedures and a gentle, compassionate approach, she ensures every patient receives exceptional results and a truly comfortable dental experience..",
-    "image": "/assets/generated_images/Dr._Priya_Menon_portrait_783e4a1a.png",
     "experience": "8+ years"
   }
 ]

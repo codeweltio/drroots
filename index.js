@@ -215,7 +215,12 @@ var MemStorage = class {
     ];
   }
   async getDoctors() {
-    return this.doctors;
+    const desiredOrder = ["1", "3", "2"];
+    const indexOf = (id) => {
+      const i = desiredOrder.indexOf(id);
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    return [...this.doctors].sort((a, b) => indexOf(a.id) - indexOf(b.id));
   }
   async getTimings() {
     return this.timings;
