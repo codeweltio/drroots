@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient Reviews</title>
+
+  <!-- Swiper CSS (CDN) -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+  />
+
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; color:#1f2937; margin:0; }
+    section.reviews { max-width: 1100px; margin: 16px auto; padding: 0 12px; }
+    section.reviews h2 { text-align:center; font-size:22px; margin: 0 0 14px; }
+
+    /* Swiper container height adapts to content */
+    .swiper { padding: 10px 10px 40px; }
+    .swiper-slide { display:flex; height:auto; }
+
+    .review-card {
+      background: #f8fbff;
+      border: 1px solid #e8eef6;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.05);
+      width: 100%;
+    }
+    .stars { font-size: 16px; margin-bottom: 8px; color:#f59e0b; }
+    .review-text { font-size: 15px; line-height: 1.55; margin-bottom: 10px; }
+    .review-meta { font-weight: 600; font-size:14px; color:#334155; }
+
+    /* Swiper arrows + dots */
+    .swiper-button-prev, .swiper-button-next {
+      color: #0f172a;
+      background: rgba(255,255,255,.9);
+      border-radius: 999px;
+      width: 38px; height: 38px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+    .swiper-button-prev:after, .swiper-button-next:after { font-size: 16px; }
+    .swiper-pagination-bullet { background:#cbd5e1; opacity:1; }
+    .swiper-pagination-bullet-active { background:#0ea5e9; }
+
+    .reviews-attr { text-align:center; font-size:12px; color:#6b7280; margin-top:8px; }
+  </style>
+</head>
+<body>
+
+<section class="reviews">
+  <h2>What Our Patients Say</h2>
+
+  <!-- Swiper structure -->
+  <div class="swiper" id="reviewsSwiper">
+    <div class="swiper-wrapper" id="swiperWrapper">
+      <!-- Slides injected by JS -->
+    </div>
+
+    <!-- Dots -->
+    <div class="swiper-pagination"></div>
+    <!-- Arrows -->
+    <div class="swiper-button-prev" aria-label="Previous"></div>
+    <div class="swiper-button-next" aria-label="Next"></div>
+  </div>
+
+  <div class="reviews-attr">Selected patient testimonials</div>
+</section>
+
+<!-- Swiper JS (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script>
+  // Turn number rating into ★/☆ string
+  const stars = (n) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
+
+  async function initReviews() {
+    const wrapper = document.getElementById("swiperWrapper");
+    let reviews = [];
+
+    try {
+      const res = await fetch("./reviews.json", { cache: "no-store" });
+      reviews = await res.json();
+    } catch (e) {
+      console.error("Could not load reviews.json", e);
+      // Minimal fallback if JSON fails:
+      reviews = [{ name:"Patient", rating:5, text:"Great experience!", time:"Recently" }];
+    }
+
+    // Build slides
+    reviews.forEach(r => {
+      const slide = document.createElement("div");
+      slide.className = "swiper-slide";
+      slide.innerHTML = `
+        <article class="review-card" aria-label="Patient review">
+          <div class="stars" aria-hidden="true">${stars(r.rating || 5)}</div>
+          <p class="review-text">"${(r.text || "").replace(/"/g, "&quot;")}"</p>
+          <div class="review-meta">${r.name || "Patient"} • ${r.time || ""}</div>
+        </article>
+      `;
+      wrapper.appendChild(slide);
+    });
+
+    // Init Swiper
+    const swiper = new Swiper("#reviewsSwiper", {
+      loop: true,
+      speed: 550,
+      grabCursor: true,
+      slidesPerView: 1,
+      spaceBetween: 16,
+
+      // Responsive breakpoints
+      breakpoints: {
+        640: { slidesPerView: 1.2, spaceBetween: 16 },
+        768: { slidesPerView: 2,   spaceBetween: 18 },
+        1024:{ slidesPerView: 3,   spaceBetween: 20 }
+      },
+
+      // Autoplay with pause on hover
+      autoplay: {
+        delay: 3500,
+        disableOnInteraction: false
+      },
+      // Pagination (dots)
+      pagination: {
+        el: ".swiper-pagination",
+        clickable: true
+      },
+      // Arrows
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev"
+      },
+      // Accessibility & control
+      keyboard: { enabled: true },
+      a11y: { enabled: true }
+    });
+
+    // Pause autoplay on hover; resume on leave
+    const container = document.getElementById("reviewsSwiper");
+    container.addEventListener("mouseenter", () => swiper.autoplay.stop());
+    container.addEventListener("mouseleave", () => swiper.autoplay.start());
+  }
+
+  initReviews();
+</script>
+</body>
+</html>
+
