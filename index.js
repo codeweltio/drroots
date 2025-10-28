@@ -298,7 +298,7 @@ var MailerService = class {
     });
   }
   async sendAppointmentConfirmation(appointment, icsAttachment) {
-    const from = process.env.MAIL_FROM || "noreply@drrootsdc.in";
+    const from = process.env.MAIL_FROM || "info@drrootsdc.in";
     const clinicEmail = "info@drrootsdc.in";
     const subject = `New Appointment Request \u2014 ${appointment.date} ${appointment.slot} \u2014 ${appointment.name}`;
     const clinicBody = `
@@ -338,7 +338,7 @@ var MailerService = class {
     await this.sendEmail(from, appointment.email, subject, patientBody, attachments);
   }
   async sendContactMessage(message) {
-    const from = process.env.MAIL_FROM || "noreply@drrootsdc.in";
+    const from = process.env.MAIL_FROM || "info@drrootsdc.in";
     const clinicEmail = "info@drrootsdc.in";
     const subject = `Contact Form: ${message.subject}`;
     const body = `
@@ -382,6 +382,18 @@ var MailerService = class {
       console.error("Failed to send email:", error);
       throw error;
     }
+  }
+  async sendOtpEmail(to, code) {
+    const from = process.env.MAIL_FROM || "info@drrootsdc.in";
+    const subject = "Your Verification Code";
+    const html = `
+      <p>Dear User,</p>
+      <p>Your one-time verification code is:</p>
+      <p style="font-size:20px;font-weight:bold;letter-spacing:2px;">${code}</p>
+      <p>This code will expire in 10 minutes. If you did not request this, you can ignore this email.</p>
+      <p>\u2014 Dr. Roots Denta Care</p>
+    `;
+    await this.sendEmail(from, to, subject, html);
   }
 };
 var mailerService = new MailerService();
@@ -494,6 +506,95 @@ var slotAvailabilitySchema = z.object({
   }))
 });
 
+// server/services/recaptcha.ts
+var RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET;
+var MIN_SCORE = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
+async function verifyRecaptcha(token, remoteip) {
+  try {
+    if (!RECAPTCHA_SECRET) {
+      return { ok: true };
+    }
+    if (!token) return { ok: false, error: "missing-token" };
+    const params = new URLSearchParams({ secret: RECAPTCHA_SECRET, response: token });
+    if (remoteip) params.append("remoteip", remoteip);
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString()
+    });
+    const json = await res.json();
+    if (!json.success) return { ok: false, error: "verification-failed" };
+    const score = typeof json.score === "number" ? json.score : void 0;
+    if (typeof score === "number" && score < MIN_SCORE) {
+      return { ok: false, score, error: "low-score" };
+    }
+    return { ok: true, score };
+  } catch (e) {
+    return { ok: false, error: e?.message || "error" };
+  }
+}
+
+// server/services/otp.ts
+import { randomInt } from "crypto";
+var OTP_TTL_MS = 10 * 60 * 1e3;
+var TOKEN_TTL_MS = 15 * 60 * 1e3;
+var SEND_COOLDOWN_MS = 60 * 1e3;
+var otpMap = /* @__PURE__ */ new Map();
+var lastSendMap = /* @__PURE__ */ new Map();
+var tokenMap = /* @__PURE__ */ new Map();
+function key(email, purpose) {
+  return `${email.toLowerCase()}|${purpose}`;
+}
+function generateCode() {
+  return (randomInt(0, 9e5) + 1e5).toString();
+}
+function generateToken() {
+  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
+async function sendOtp(email, purpose) {
+  const now = Date.now();
+  const last = lastSendMap.get(email.toLowerCase()) || 0;
+  if (now - last < SEND_COOLDOWN_MS) {
+    throw new Error("Please wait a minute before requesting a new code.");
+  }
+  const code = generateCode();
+  otpMap.set(key(email, purpose), {
+    email,
+    code,
+    purpose,
+    expiresAt: now + OTP_TTL_MS
+  });
+  lastSendMap.set(email.toLowerCase(), now);
+  await mailerService.sendOtpEmail(email, code);
+}
+async function verifyOtp(email, purpose, code) {
+  const rec = otpMap.get(key(email, purpose));
+  otpMap.delete(key(email, purpose));
+  if (!rec) throw new Error("Invalid or expired code");
+  if (rec.expiresAt < Date.now()) throw new Error("Code expired. Please request a new one.");
+  if (rec.code !== code) throw new Error("Incorrect code");
+  const token = generateToken();
+  tokenMap.set(token, {
+    token,
+    email,
+    purpose,
+    expiresAt: Date.now() + TOKEN_TTL_MS,
+    consumed: false
+  });
+  return token;
+}
+function consumeVerifiedToken(token, email, purpose) {
+  if (!token) return false;
+  const rec = tokenMap.get(token);
+  if (!rec) return false;
+  if (rec.consumed) return false;
+  if (rec.expiresAt < Date.now()) return false;
+  if (rec.email.toLowerCase() !== email.toLowerCase()) return false;
+  if (rec.purpose !== purpose) return false;
+  rec.consumed = true;
+  return true;
+}
+
 // server/routes.ts
 async function registerRoutes(app2) {
   app2.get("/api/doctors", async (req, res) => {
@@ -544,6 +645,11 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/appointments", async (req, res) => {
     try {
+      const ip = req.ip || req.socket.remoteAddress || void 0;
+      const recaptcha = await verifyRecaptcha(req.body?.recaptchaToken, ip);
+      if (!recaptcha.ok) {
+        return res.status(400).json({ error: "reCAPTCHA verification failed" });
+      }
       if (req.body.website) {
         return res.status(400).json({ error: "Invalid submission" });
       }
@@ -557,6 +663,10 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
       const appointmentData = validationResult.data;
+      const verified = consumeVerifiedToken(req.body?.otpToken, appointmentData.email, "appointment");
+      if (!verified) {
+        return res.status(400).json({ error: "Email verification required" });
+      }
       const appointmentDate = /* @__PURE__ */ new Date(appointmentData.date + "T00:00:00");
       const today = /* @__PURE__ */ new Date();
       today.setHours(0, 0, 0, 0);
@@ -587,6 +697,11 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/contact", async (req, res) => {
     try {
+      const ip = req.ip || req.socket.remoteAddress || void 0;
+      const recaptcha = await verifyRecaptcha(req.body?.recaptchaToken, ip);
+      if (!recaptcha.ok) {
+        return res.status(400).json({ error: "reCAPTCHA verification failed" });
+      }
       if (req.body.website) {
         return res.status(400).json({ error: "Invalid submission" });
       }
@@ -600,6 +715,10 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
       const messageData = validationResult.data;
+      const verified = consumeVerifiedToken(req.body?.otpToken, messageData.email, "contact");
+      if (!verified) {
+        return res.status(400).json({ error: "Email verification required" });
+      }
       const message = await storage.createContactMessage(messageData);
       await mailerService.sendContactMessage(message);
       await storage.recordRequest(clientIp);
@@ -632,6 +751,30 @@ Allow: /
 Sitemap: ${baseUrl}/sitemap.xml`;
     res.header("Content-Type", "text/plain");
     res.send(robots);
+  });
+  app2.post("/api/otp/send", async (req, res) => {
+    try {
+      const { email, purpose } = req.body || {};
+      if (!email || !purpose || !["appointment", "contact"].includes(purpose)) {
+        return res.status(400).json({ error: "Invalid request" });
+      }
+      await sendOtp(email, purpose);
+      res.status(200).json({ ok: true });
+    } catch (e) {
+      res.status(400).json({ error: e?.message || "Failed to send code" });
+    }
+  });
+  app2.post("/api/otp/verify", async (req, res) => {
+    try {
+      const { email, purpose, code } = req.body || {};
+      if (!email || !purpose || !code || !["appointment", "contact"].includes(purpose)) {
+        return res.status(400).json({ error: "Invalid request" });
+      }
+      const token = await verifyOtp(email, purpose, code);
+      res.status(200).json({ ok: true, token });
+    } catch (e) {
+      res.status(400).json({ error: e?.message || "Verification failed" });
+    }
   });
   const httpServer = createServer(app2);
   return httpServer;
