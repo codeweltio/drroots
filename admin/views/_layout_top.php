@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="/admin/assets/admin.css" />
 </head>
 <body>
-  <header>
+  <header class="header">
     <div class="container">
-      <nav>
+      <nav class="nav">
         <a href="/admin">Dashboard</a>
         <a href="/admin/appointments?status=pending">Pending</a>
         <a href="/admin/appointments?status=confirmed">Confirmed</a>
