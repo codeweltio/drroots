@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Route API and utility endpoints to PHP router
+RewriteRule ^api/.*$ api/index.php [QSA,L]
+RewriteRule ^sitemap\.xml$ api/index.php [QSA,L]
+RewriteRule ^robots\.txt$ api/index.php [QSA,L]
+
