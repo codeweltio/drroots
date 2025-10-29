@@ -143,13 +143,16 @@ try {
         $ics = build_ics($appointment);
         $subject = 'New Appointment Request — ' . $appointment['date'] . ' ' . $appointment['slot'] . ' — ' . $appointment['name'];
 
+        // Force subject/date display in friendly format
+        $displayWhen = format_appt_display($appointment['date'], $appointment['slot']);
+        $subject = 'New Appointment Request — ' . $displayWhen . ' — ' . $appointment['name'];
+
         $clinicBody = '<h2>New Appointment Request</h2>' .
             '<ul>' .
             '<li><strong>Name:</strong> ' . htmlspecialchars($name) . '</li>' .
             '<li><strong>Phone:</strong> ' . htmlspecialchars($phone) . '</li>' .
             '<li><strong>Email:</strong> ' . htmlspecialchars($email) . '</li>' .
-            '<li><strong>Date:</strong> ' . htmlspecialchars($date) . '</li>' .
-            '<li><strong>Time:</strong> ' . htmlspecialchars($slot) . '</li>' .
+            '<li><strong>Date/Time:</strong> ' . htmlspecialchars($displayWhen) . '</li>' .
             '<li><strong>Reason:</strong> ' . htmlspecialchars($reason ?? 'Not specified') . '</li>' .
             '</ul>';
         $patientBody = '<h2>Appointment Request Confirmation</h2>' .
@@ -157,8 +160,7 @@ try {
             '<p>Thank you for booking an appointment with Dr. Roots Dental Clinic!</p>' .
             '<h3>Appointment Details:</h3>' .
             '<ul>' .
-            '<li><strong>Date:</strong> ' . htmlspecialchars($date) . '</li>' .
-            '<li><strong>Time:</strong> ' . htmlspecialchars($slot) . '</li>' .
+            '<li><strong>Date/Time:</strong> ' . htmlspecialchars($displayWhen) . '</li>' .
             '<li><strong>Reason:</strong> ' . htmlspecialchars($reason ?? 'General consultation') . '</li>' .
             '</ul>' .
             '<p>We will confirm your appointment shortly.</p>';
