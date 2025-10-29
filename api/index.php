@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/db.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
@@ -71,16 +72,23 @@ try {
             return api_json([ 'date' => $date, 'slots' => [] ]);
         }
 
-        $appointments = read_json_file($appointmentsPath, []);
+        // Query DB for existing appointments on this date
+        $pdo = db_pdo();
+        $stmt = $pdo->prepare('SELECT slot FROM appointments WHERE date = ? AND status <> "cancelled"');
+        $stmt->execute([$date]);
+        $takenMap = [];
+        foreach ($stmt->fetchAll() as $row) { $takenMap[$row['slot']] = true; }
         $slots = [];
+        // Compute IST 'now' to gray out past slots for today
+        $nowIst = new DateTimeImmutable('now', new DateTimeZone('Asia/Kolkata'));
+        $todayIst = $nowIst->format('Y-m-d');
+        $currentTimeIst = $nowIst->format('H:i');
         foreach ($dayConfig['slots'] as $time) {
-            $taken = false;
-            foreach ($appointments as $apt) {
-                if (($apt['date'] ?? '') === $date && ($apt['slot'] ?? '') === $time && ($apt['status'] ?? '') !== 'cancelled') {
-                    $taken = true; break;
-                }
+            $available = !isset($takenMap[$time]);
+            if ($date === $todayIst && strcmp($time, $currentTimeIst) < 0) {
+                $available = false; // past time in IST
             }
-            $slots[] = ['time' => $time, 'available' => !$taken];
+            $slots[] = ['time' => $time, 'available' => $available];
         }
         return api_json([ 'date' => $date, 'slots' => $slots ]);
     }
@@ -112,18 +120,47 @@ try {
 
         $today = today_midnight();
         if ($dateObj < $today) return api_error('Cannot book appointments in the past', 400);
+        // Prevent booking past time for today based on IST
+        $nowIst = new DateTimeImmutable('now', new DateTimeZone('Asia/Kolkata'));
+        if ($date === $nowIst->format('Y-m-d')) {
+            $currentTimeIst = $nowIst->format('H:i');
+            if (strcmp($slot, $currentTimeIst) < 0) {
+                return api_error('Selected time is in the past for today (IST).', 400);
+            }
+        }
         $max = (new DateTimeImmutable('now'))->modify('+60 days')->setTime(0, 0, 0);
         if ($dateObj > $max) return api_error('Cannot book appointments more than 60 days in advance', 400);
 
-        $appointments = read_json_file($appointmentsPath, []);
-        foreach ($appointments as $apt) {
-            if (($apt['date'] ?? '') === $date && ($apt['slot'] ?? '') === $slot && ($apt['status'] ?? '') !== 'cancelled') {
-                return api_error('This time slot is already booked. Please select another time.', 409);
-            }
+        // Enforce max 4 bookings/day/IP via ip_activity table
+        $pdo = db_pdo();
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $ipBin = ip_to_bin($ip);
+        $todayStr = (new DateTimeImmutable('now'))->format('Y-m-d');
+        $check = $pdo->prepare('SELECT count FROM ip_activity WHERE ip = ? AND date = ? AND endpoint = ?');
+        $check->execute([$ipBin, $todayStr, 'appointments']);
+        $row = $check->fetch();
+        if ($row && (int)$row['count'] >= 4) {
+            return api_error('Daily booking limit reached for this IP. Please try again tomorrow or contact the clinic.', 429);
         }
 
+        // Check slot availability in DB
+        $conflict = $pdo->prepare('SELECT 1 FROM appointments WHERE date = ? AND slot = ? AND status <> "cancelled" LIMIT 1');
+        $conflict->execute([$date, $slot]);
+        if ($conflict->fetch()) {
+            return api_error('This time slot is already booked. Please select another time.', 409);
+        }
+
+        // Insert appointment with IP and UA
+        $appointmentId = generate_uuid();
+        $createdAt = (new DateTimeImmutable('now'))->format('Y-m-d H:i:s');
+        $ipText = client_ip();
+        $ipBin = ip_to_bin($ipText);
+        $ua = user_agent();
+        $ins = $pdo->prepare('INSERT INTO appointments (id,name,phone,email,date,slot,reason,status,created_at,updated_at,confirmed_by, ip, ip_text, user_agent) VALUES (?,?,?,?,?,?,?,?,?,NULL,NULL, ?,?,?)');
+        $ins->execute([$appointmentId,$name,$phone,$email,$date,$slot,$reason,'pending',$createdAt,$ipBin,$ipText,$ua]);
+
         $appointment = [
-            'id' => generate_uuid(),
+            'id' => $appointmentId,
             'name' => $name,
             'phone' => $phone,
             'email' => $email,
@@ -131,13 +168,9 @@ try {
             'slot' => $slot,
             'reason' => $reason,
             'consent' => true,
-            'createdAt' => (new DateTimeImmutable('now'))->format(DateTimeInterface::ATOM),
+            'createdAt' => (new DateTimeImmutable($createdAt))->format(DateTimeInterface::ATOM),
             'status' => 'pending',
         ];
-        $appointments[] = $appointment;
-        if (!write_json_file($appointmentsPath, $appointments)) {
-            return api_error('Failed to persist appointment', 500);
-        }
 
         // Generate ICS and log two emails (clinic + patient)
         $ics = build_ics($appointment);
@@ -165,8 +198,35 @@ try {
             '</ul>' .
             '<p>We will confirm your appointment shortly.</p>';
 
+        // Attempt geo lookup (best-effort)
+        $geo = geo_lookup_ip($ipText);
+        if ($geo['country'] || $geo['region'] || $geo['city']) {
+            try {
+                $upd = $pdo->prepare('UPDATE appointments SET geo_country = ?, geo_region = ?, geo_city = ?, geo_source = ? WHERE id = ?');
+                $upd->execute([$geo['country'],$geo['region'],$geo['city'],$geo['source'],$appointmentId]);
+            } catch (Throwable $e) { /* ignore */ }
+        }
+
+        // Append client fingerprint (IP, location, UA)
+        $uaParsed = parse_user_agent($ua);
+        $locParts = [];
+        if (!empty($geo['city'])) $locParts[] = $geo['city'];
+        if (!empty($geo['region'])) $locParts[] = $geo['region'];
+        if (!empty($geo['country'])) $locParts[] = $geo['country'];
+        $locText = $locParts ? implode(', ', $locParts) : 'Unknown';
+        $clinicBody .= '<h3>Client Info</h3><ul>' .
+            '<li><strong>IP:</strong> ' . htmlspecialchars($ipText) . '</li>' .
+            '<li><strong>Location:</strong> ' . htmlspecialchars($locText) . '</li>' .
+            '<li><strong>Device:</strong> ' . htmlspecialchars($uaParsed['device']) . '</li>' .
+            '<li><strong>OS:</strong> ' . htmlspecialchars($uaParsed['os']) . '</li>' .
+            '<li><strong>Browser:</strong> ' . htmlspecialchars($uaParsed['browser']) . '</li>' .
+            '</ul>';
+
         send_email('info@drrootsdc.in', $subject, $clinicBody, $ics);
         send_email($email, $subject, $patientBody, $ics);
+        // Increment ip_activity after successful booking
+        $inc = $pdo->prepare('INSERT INTO ip_activity (ip,date,endpoint,count) VALUES (?,?,?,1) ON DUPLICATE KEY UPDATE count = count + 1');
+        $inc->execute([$ipBin, $todayStr, 'appointments']);
         rate_limit_record($ip);
 
         return api_json($appointment, 201);
@@ -191,20 +251,20 @@ try {
         if (strlen($subject) < 5) return api_error('Subject must be at least 5 characters', 400);
         if (strlen($messageText) < 10) return api_error('Message must be at least 10 characters', 400);
 
-        $messages = read_json_file($messagesPath, []);
+        $pdo = db_pdo();
+        $msgId = generate_uuid();
+        $createdAt = (new DateTimeImmutable('now'))->format('Y-m-d H:i:s');
+        $stmt = $pdo->prepare('INSERT INTO contact_messages (id,name,email,phone,subject,message,created_at) VALUES (?,?,?,?,?,?,?)');
+        $stmt->execute([$msgId,$name,$email,$phone,$subject,$messageText,$createdAt]);
         $message = [
-            'id' => generate_uuid(),
+            'id' => $msgId,
             'name' => $name,
             'email' => $email,
             'phone' => $phone,
             'subject' => $subject,
             'message' => $messageText,
-            'createdAt' => (new DateTimeImmutable('now'))->format(DateTimeInterface::ATOM),
+            'createdAt' => (new DateTimeImmutable($createdAt))->format(DateTimeInterface::ATOM),
         ];
-        $messages[] = $message;
-        if (!write_json_file($messagesPath, $messages)) {
-            return api_error('Failed to persist message', 500);
-        }
 
         $bodyHtml = '<h2>New Contact Form Submission</h2>' .
             '<ul>' .
@@ -218,6 +278,31 @@ try {
         rate_limit_record($ip);
 
         return api_json($message, 201);
+    }
+
+    // API: GET /api/appointments/{id} (status only; no PII)
+    if ($method === 'GET' && preg_match('#^/api/appointments/([a-f0-9\-]{36})/?$#i', $uriPath, $m)) {
+        $id = $m[1];
+        try {
+            $pdo = db_pdo();
+            $stmt = $pdo->prepare('SELECT id, date, slot, status, created_at, updated_at FROM appointments WHERE id = ? LIMIT 1');
+            $stmt->execute([$id]);
+            $row = $stmt->fetch();
+            if (!$row) {
+                return api_error('Not found', 404);
+            }
+            return api_json([
+                'id' => $row['id'],
+                'date' => $row['date'],
+                'slot' => $row['slot'],
+                'status' => $row['status'],
+                'createdAt' => $row['created_at'],
+                'updatedAt' => $row['updated_at'],
+            ]);
+        } catch (Throwable $e) {
+            error_log('GET /api/appointments/{id} failed: ' . $e->getMessage());
+            return api_error('Internal Server Error', 500);
+        }
     }
 
     // GET /sitemap.xml

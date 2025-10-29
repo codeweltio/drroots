@@ -15,7 +15,21 @@ if (preg_match('#^/api/.*$#', $uri) || $uri === '/sitemap.xml' || $uri === '/rob
     return true;
 }
 
+// Admin console routes
+if ($uri === '/admin' || preg_match('#^/admin/.*$#', $uri)) {
+    require __DIR__ . '/admin/index.php';
+    return true;
+}
+
+// Static policy pages
+if ($uri === '/privacy' || $uri === '/terms') {
+    $file = __DIR__ . ($uri === '/privacy' ? '/privacy.html' : '/terms.html');
+    if (is_file($file)) {
+        readfile($file);
+        return true;
+    }
+}
+
 // Fallback: serve index.html (SPA-style)
 readfile(__DIR__ . '/index.html');
 return true;
-

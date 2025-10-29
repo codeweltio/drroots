@@ -1,0 +1,7 @@
+        $pdo->prepare('UPDATE appointments SET status = "confirmed", calendar_uid = ?, calendar_seq = ?, updated_at = NOW() WHERE id = ?')->execute([$uid,$seq,$id]);
+        $ics = build_ics_admin($a, $uid, $seq, 'REQUEST');
+        $subject = 'Appointment Confirmed — ' . format_appt_display($a['date'], $a['slot']);
+        $body = '<p>Dear ' . htmlspecialchars($a['name']) . ',</p><p>Your appointment is confirmed.</p><ul><li><strong>Date/Time:</strong> ' . htmlspecialchars(format_appt_display($a['date'],$a['slot'])) . '</li></ul>';
+        send_email($a['email'], $subject, $body, $ics);
+    } else { // cancel
+        $pdo->prepare('UPDATE appointments SET status = "cancelled", calendar_uid = ?, calendar_seq = ?, updated_at = NOW() WHERE id = ?')->execute([$uid,$seq,$id]);

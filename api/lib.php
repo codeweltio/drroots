@@ -112,6 +112,56 @@ function build_ics(array $appointment): string {
     return implode("\r\n", $lines) . "\r\n";
 }
 
+// Admin ICS generator with METHOD and SEQUENCE, preserving UID
+function build_ics_admin(array $appointment, string $uid, int $sequence, string $method = 'REQUEST'): string {
+    $dt = new DateTimeImmutable($appointment['date'] . ' ' . $appointment['slot']);
+    $end = $dt->modify('+30 minutes');
+    $fmt = fn(DateTimeImmutable $d) => $d->format('Ymd\THis');
+    $summary = 'Dental Appointment - Dr. Roots Dental Clinic';
+    $desc = 'Appointment with Dr. Roots Dental Clinic';
+    $status = $method === 'CANCEL' ? 'CANCELLED' : 'CONFIRMED';
+    $lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Dr Roots Dental Clinic//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:' . $method,
+        'BEGIN:VEVENT',
+        'UID:' . $uid,
+        'SEQUENCE:' . $sequence,
+        'DTSTAMP:' . $fmt(new DateTimeImmutable('now')),
+        'DTSTART:' . $fmt($dt),
+        'DTEND:' . $fmt($end),
+        'SUMMARY:' . $summary,
+        'DESCRIPTION:' . $desc,
+        'LOCATION:Dr. Roots Dental Clinic, Palakkad, Kerala',
+        'STATUS:' . $status,
+        'END:VEVENT',
+        'END:VCALENDAR',
+    ];
+    return implode("\r\n", $lines) . "\r\n";
+}
+
+function parse_user_agent(string $ua): array {
+    $uaLower = strtolower($ua);
+    $os = 'Unknown';
+    if (strpos($uaLower, 'windows nt') !== false) $os = 'Windows';
+    elseif (strpos($uaLower, 'mac os x') !== false || strpos($uaLower, 'macintosh') !== false) $os = 'macOS';
+    elseif (strpos($uaLower, 'android') !== false) $os = 'Android';
+    elseif (strpos($uaLower, 'iphone') !== false || strpos($uaLower, 'ipad') !== false || strpos($uaLower, 'ios') !== false) $os = 'iOS';
+    elseif (strpos($uaLower, 'linux') !== false) $os = 'Linux';
+
+    $browser = 'Unknown';
+    if (strpos($ua, 'Edg') !== false) $browser = 'Edge';
+    elseif (strpos($ua, 'OPR') !== false || strpos($uaLower, 'opera') !== false) $browser = 'Opera';
+    elseif (strpos($ua, 'CriOS') !== false || (strpos($uaLower, 'chrome') !== false && strpos($ua, 'Edg') === false && strpos($ua, 'OPR') === false)) $browser = 'Chrome';
+    elseif (strpos($uaLower, 'safari') !== false && strpos($uaLower, 'chrome') === false) $browser = 'Safari';
+    elseif (strpos($uaLower, 'firefox') !== false) $browser = 'Firefox';
+
+    $device = (strpos($uaLower, 'mobile') !== false || strpos($uaLower, 'android') !== false || strpos($uaLower, 'iphone') !== false) ? 'Mobile' : 'Desktop';
+    return ['os' => $os, 'browser' => $browser, 'device' => $device];
+}
+
 function log_email(string $to, string $subject, string $html, ?string $icsContent = null): void {
     $logPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'email.log';
     $entry = str_repeat('=', 80) . "\n";

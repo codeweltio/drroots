@@ -17,4 +17,13 @@ return [
     'SMTP_SECURE' => 'tls', // 'ssl' | 'tls'
     'SMTP_USER' => '',
     'SMTP_PASS' => '',
+
+    // Database (local Docker defaults; update on cPanel)
+    'DB_HOST' => 'localhost',
+    'DB_PORT' => 3306,
+    'DB_NAME' => 'drrootsdc_dashboard',
+    'DB_USER' => 'drrootsdc_drrootsdc_dashboard',
+    'DB_PASS' => '5]Fs}H7{tkH~7oaR',
+    // Use utf8mb4 as the connection charset. Your DB collation is utf8mb4_unicode_ci.
+    'DB_CHARSET' => 'utf8mb4',
 ];

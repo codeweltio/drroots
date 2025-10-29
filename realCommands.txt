@@ -1,0 +1,2 @@
+/c/tools/php84/php.exe -S localhost:8000 router.php
+docker run -d --name drroots-db -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret -e MYSQL_DATABASE=drroots_local -e MYSQL_USER=drroots -e MYSQL_PASSWORD=drroots_pw -v drroots_db:/var/lib/mysql mariadb:10.6
