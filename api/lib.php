@@ -120,11 +120,22 @@ function send_email_mail_function(string $to, string $subject, string $html, ?st
     $fromName = $__APP_CONFIG['MAIL_FROM_NAME'] ?? 'Website';
     $replyTo = $__APP_CONFIG['MAIL_REPLY_TO'] ?? $from;
 
+    // Encode non-ASCII safely for mail headers (RFC 2047)
+    $needs_encoding = function (string $s): bool { return preg_match('/[^\x20-\x7E]/', $s) === 1; };
+    $mime_encode = function (string $s): string {
+        if (function_exists('mb_encode_mimeheader')) {
+            return mb_encode_mimeheader($s, 'UTF-8', 'B', "\r\n");
+        }
+        return '=?UTF-8?B?' . base64_encode($s) . '?=';
+    };
+    $encodedSubject = $needs_encoding($subject) ? $mime_encode($subject) : $subject;
+    $encodedFromName = $needs_encoding($fromName) ? $mime_encode($fromName) : $fromName;
+
     $boundary = 'b_' . bin2hex(random_bytes(8));
     $boundaryAlt = 'ba_' . bin2hex(random_bytes(8));
 
     $headers = [];
-    $headers[] = 'From: ' . sprintf('"%s" <%s>', addslashes($fromName), $from);
+    $headers[] = 'From: ' . sprintf('"%s" <%s>', addslashes($encodedFromName), $from);
     $headers[] = 'Reply-To: ' . $replyTo;
     $headers[] = 'MIME-Version: 1.0';
     $headers[] = 'Content-Type: multipart/mixed; boundary="' . $boundary . '"';
@@ -166,7 +177,7 @@ function send_email_mail_function(string $to, string $subject, string $html, ?st
 
     // Some providers require '-f' to set Return-Path to domain mailbox
     $params = '-f' . $from;
-    return @mail($to, $subject, $bodyStr, $headersStr, $params);
+    return @mail($to, $encodedSubject, $bodyStr, $headersStr, $params);
 }
 
 function send_email(string $to, string $subject, string $html, ?string $icsContent = null): void {
