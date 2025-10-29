@@ -5,3 +5,6 @@ RewriteRule ^api/.*$ api/index.php [QSA,L]
 RewriteRule ^sitemap\.xml$ api/index.php [QSA,L]
 RewriteRule ^robots\.txt$ api/index.php [QSA,L]
 
+# Pretty URLs for static policy pages
+RewriteRule ^privacy/?$ privacy.html [L]
+RewriteRule ^terms/?$ terms.html [L]

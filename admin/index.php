@@ -58,6 +58,8 @@ function audit_log(array $actor, string $action, string $entityType, string $ent
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+// Normalize trailing slashes so /admin/ behaves like /admin
+if ($path !== '/') { $path = rtrim($path, '/'); }
 
 // Simple auto-seed helper: creates admin user if users table exists and empty
 function ensure_admin_seed(PDO $pdo): void {
