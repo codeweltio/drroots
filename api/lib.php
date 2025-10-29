@@ -1,5 +1,7 @@
 <?php
-// Lightweight helpers for JSON IO, validation, ICS generation, and email logging.
+// Lightweight helpers for JSON IO, validation, ICS generation, and email delivery.
+
+$__APP_CONFIG = require __DIR__ . '/config.php';
 
 function api_json($data, int $status = 200): void {
     http_response_code($status);
@@ -112,6 +114,76 @@ function log_email(string $to, string $subject, string $html, ?string $icsConten
     file_put_contents($logPath, $entry, FILE_APPEND);
 }
 
+function send_email_mail_function(string $to, string $subject, string $html, ?string $icsContent = null): bool {
+    global $__APP_CONFIG;
+    $from = $__APP_CONFIG['MAIL_FROM'] ?? 'noreply@localhost';
+    $fromName = $__APP_CONFIG['MAIL_FROM_NAME'] ?? 'Website';
+    $replyTo = $__APP_CONFIG['MAIL_REPLY_TO'] ?? $from;
+
+    $boundary = 'b_' . bin2hex(random_bytes(8));
+    $boundaryAlt = 'ba_' . bin2hex(random_bytes(8));
+
+    $headers = [];
+    $headers[] = 'From: ' . sprintf('"%s" <%s>', addslashes($fromName), $from);
+    $headers[] = 'Reply-To: ' . $replyTo;
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: multipart/mixed; boundary="' . $boundary . '"';
+
+    $body = [];
+    $body[] = '--' . $boundary;
+    $body[] = 'Content-Type: multipart/alternative; boundary="' . $boundaryAlt . '"';
+    $body[] = '';
+    // Plaintext part (fallback)
+    $plain = strip_tags(str_replace(['<br>', '<br/>', '<br />'], ["\n","\n","\n"], $html));
+    $body[] = '--' . $boundaryAlt;
+    $body[] = 'Content-Type: text/plain; charset=UTF-8';
+    $body[] = 'Content-Transfer-Encoding: 8bit';
+    $body[] = '';
+    $body[] = $plain;
+    // HTML part
+    $body[] = '--' . $boundaryAlt;
+    $body[] = 'Content-Type: text/html; charset=UTF-8';
+    $body[] = 'Content-Transfer-Encoding: 8bit';
+    $body[] = '';
+    $body[] = $html;
+    $body[] = '--' . $boundaryAlt . '--';
+
+    // ICS attachment
+    if ($icsContent !== null) {
+        $filename = 'appointment.ics';
+        $body[] = '--' . $boundary;
+        $body[] = 'Content-Type: text/calendar; name="' . $filename . '"; method=REQUEST; charset=UTF-8';
+        $body[] = 'Content-Transfer-Encoding: base64';
+        $body[] = 'Content-Disposition: attachment; filename="' . $filename . '"';
+        $body[] = '';
+        $body[] = chunk_split(base64_encode($icsContent));
+    }
+
+    $body[] = '--' . $boundary . '--';
+
+    $headersStr = implode("\r\n", $headers);
+    $bodyStr = implode("\r\n", $body);
+
+    // Some providers require '-f' to set Return-Path to domain mailbox
+    $params = '-f' . $from;
+    return @mail($to, $subject, $bodyStr, $headersStr, $params);
+}
+
+function send_email(string $to, string $subject, string $html, ?string $icsContent = null): void {
+    global $__APP_CONFIG;
+    $mode = strtolower((string)($__APP_CONFIG['MAIL_DELIVERY'] ?? 'log'));
+    if ($mode === 'mail') {
+        $ok = send_email_mail_function($to, $subject, $html, $icsContent);
+        if (!$ok) {
+            // Fallback to log if mail() fails
+            log_email($to, $subject, $html, $icsContent);
+        }
+        return;
+    }
+    // Default: log only
+    log_email($to, $subject, $html, $icsContent);
+}
+
 function rate_limit_can_proceed(string $ip, int $windowSeconds = 60): bool {
     $path = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'ratelimit.json';
     $map = read_json_file($path, []);
@@ -126,4 +198,3 @@ function rate_limit_record(string $ip): void {
     $map[$ip] = time();
     write_json_file($path, $map);
 }
-

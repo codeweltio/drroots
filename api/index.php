@@ -163,8 +163,8 @@ try {
             '</ul>' .
             '<p>We will confirm your appointment shortly.</p>';
 
-        log_email('info@drrootsdc.in', $subject, $clinicBody, $ics);
-        log_email($email, $subject, $patientBody, $ics);
+        send_email('info@drrootsdc.in', $subject, $clinicBody, $ics);
+        send_email($email, $subject, $patientBody, $ics);
         rate_limit_record($ip);
 
         return api_json($appointment, 201);
@@ -212,7 +212,7 @@ try {
             '<li><strong>Subject:</strong> ' . htmlspecialchars($subject) . '</li>' .
             '</ul>' .
             '<h3>Message:</h3><p>' . nl2br(htmlspecialchars($messageText)) . '</p>';
-        log_email('info@drrootsdc.in', 'Contact Form: ' . $subject, $bodyHtml);
+        send_email('info@drrootsdc.in', 'Contact Form: ' . $subject, $bodyHtml);
         rate_limit_record($ip);
 
         return api_json($message, 201);
@@ -256,4 +256,3 @@ try {
     error_log('API error: ' . $e->getMessage());
     return api_error('Internal Server Error', 500);
 }
-
