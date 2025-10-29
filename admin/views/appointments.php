@@ -10,7 +10,9 @@
         <th>Email</th>
         <th>Phone</th>
         <th>Date/Time</th>
+        <?php if ($status !== 'confirmed'): ?>
         <th>Status</th>
+        <?php endif; ?>
         <th class="text-end">Actions</th>
       </tr>
     </thead>
@@ -21,13 +23,15 @@
           <td><?= htmlspecialchars($row['name']) ?></td>
           <td><?= htmlspecialchars($row['email']) ?></td>
           <td data-tel="<?= htmlspecialchars($tel) ?>">
-            <?php if ($tel): ?><a class="link-light text-decoration-none" href="tel:<?= htmlspecialchars($tel) ?>"><?= htmlspecialchars($row['phone']) ?></a><?php else: ?><?= htmlspecialchars($row['phone'] ?? '') ?><?php endif; ?>
+            <?php if ($tel): ?><a class="phone-link" href="tel:<?= htmlspecialchars($tel) ?>"><?= htmlspecialchars($row['phone']) ?></a><?php else: ?><?= htmlspecialchars($row['phone'] ?? '') ?><?php endif; ?>
           </td>
           <td><?= htmlspecialchars(format_appt_display($row['date'], $row['slot'])) ?></td>
-          <td>
-            <?php $s = $row['status']; $badge = $s==='pending'?'badge--pending':($s==='confirmed'?'badge--confirmed':'badge--cancelled'); ?>
-            <span class="badge <?= $badge ?>"><?= htmlspecialchars($row['status']) ?></span>
-          </td>
+          <?php if ($status !== 'confirmed'): ?>
+            <td>
+              <?php $s = $row['status']; $badge = $s==='pending'?'badge--pending':($s==='confirmed'?'badge--confirmed':'badge--cancelled'); ?>
+              <span class="badge <?= $badge ?>"><?= htmlspecialchars($row['status']) ?></span>
+            </td>
+          <?php endif; ?>
           <td class="text-end">
             <div class="actions-inline">
               <?php if ($status === 'pending'): ?>

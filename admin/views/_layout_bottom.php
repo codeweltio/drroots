@@ -33,13 +33,17 @@
               renderer: function ( api, rowIdx ) {
                 const $row = jQuery(api.row(rowIdx).node());
                 const tds = $row.find('td');
+                const n = tds.length;
                 const name = jQuery(tds[0]).text().trim();
                 const email = jQuery(tds[1]).text().trim();
                 const $phoneCell = jQuery(tds[2]);
                 const phoneHtml = $phoneCell.html();
-                const dt = jQuery(tds[3]).text().trim();
-                const statusHtml = jQuery(tds[4]).html();
-                const $actions = jQuery(tds[5]).clone(true,true);
+                // Actions is always the last cell
+                const $actions = jQuery(tds[n-1]).clone(true,true);
+                // Date/Time is the penultimate cell (or n-2)
+                const dt = jQuery(tds[n-2]).text().trim();
+                // Status exists only when columns include it (n===6)
+                const statusHtml = (n === 6) ? jQuery(tds[4]).html() : '<span class="badge badge--confirmed">confirmed</span>';
                 // Rebind tooltips inside cloned actions
                 $actions.find('[data-bs-toggle="tooltip"]').tooltip();
 

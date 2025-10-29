@@ -59,7 +59,9 @@ tbody tr:hover{background:rgba(59,130,246,.08)}
 .dataTables_wrapper .dataTables_length select { color: var(--text); background:#0c1323; border:1px solid rgba(255,255,255,.12); border-radius:10px; }
 
 /* Appointments layout helpers */
-.actions-inline { display:flex; align-items:center; gap:.5rem; flex-wrap: nowrap; }
+.actions-inline { display:flex; align-items:center; gap:.5rem; flex-wrap: wrap; row-gap: .35rem; }
+.actions-inline .form-control { min-width: 9rem; }
+.actions-inline .btn { white-space: nowrap; }
 @media (max-width: 767.98px){
   .dt-rowcard{ background:#0f172a; border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,.08) }
   .row-top{ display:flex; justify-content:space-between; gap:.75rem; margin-bottom:.25rem }
@@ -67,3 +69,6 @@ tbody tr:hover{background:rgba(59,130,246,.08)}
   .row-bottom-bar{ display:flex; gap:.5rem; overflow-x:auto; padding-top:.25rem }
   .row-bottom-bar .btn{ white-space:nowrap }
 }
+
+/* Phone link visibility */
+.phone-link { color:#000 !important; background:#fff; padding:2px 6px; border-radius:6px; text-decoration:none; }
