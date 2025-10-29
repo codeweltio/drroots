@@ -8,3 +8,7 @@ RewriteRule ^robots\.txt$ api/index.php [QSA,L]
 # Pretty URLs for static policy pages
 RewriteRule ^privacy/?$ privacy.html [L]
 RewriteRule ^terms/?$ terms.html [L]
+
+# Route admin paths to the PHP admin router
+RewriteRule ^admin/?$ admin/index.php [QSA,L]
+RewriteRule ^admin/.*$ admin/index.php [QSA,L]
