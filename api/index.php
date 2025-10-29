@@ -283,6 +283,30 @@ try {
         return api_json($message, 201);
     }
 
+    // API: GET /api/health (temporary diagnostics)
+    if ($method === 'GET' && preg_match('#^/api/health/?$#', $uriPath)) {
+        try {
+            $pdo = db_pdo();
+            $dbOk = (bool)$pdo->query('SELECT 1')->fetchColumn();
+        } catch (Throwable $e) {
+            $dbOk = false;
+        }
+        $conf = [
+            'phpVersion' => PHP_VERSION,
+            'db' => [ 'connected' => $dbOk ],
+            'mailFrom' => $__APP_CONFIG['MAIL_FROM'] ?? null,
+            'mailDelivery' => $__APP_CONFIG['MAIL_DELIVERY'] ?? null,
+            'patientEmailOnCreateConfig' => $__APP_CONFIG['PATIENT_EMAIL_ON_CREATE'] ?? null,
+            // Hard-coded failsafe: patient email on create is disabled in code
+            'patientEmailOnCreateCode' => false,
+            'indexFile' => __FILE__,
+            'indexMTime' => @date('c', @filemtime(__FILE__)),
+            'configFile' => __DIR__ . '/config.php',
+            'configMTime' => @date('c', @filemtime(__DIR__ . '/config.php')),
+        ];
+        return api_json($conf);
+    }
+
     // API: GET /api/appointments/{id} (status only; no PII)
     if ($method === 'GET' && preg_match('#^/api/appointments/([a-f0-9\-]{36})/?$#i', $uriPath, $m)) {
         $id = $m[1];
