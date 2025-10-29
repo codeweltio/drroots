@@ -96,9 +96,10 @@
     // Intercept cancel and reschedule everywhere (pending/today/appointments tables)
     (function(){
       let pendingSubmit = null;
-      function showConfirm(html, confirmText){
+      function showConfirm(html, confirmText, title){
         document.getElementById('actionSummary').innerHTML = html;
         document.getElementById('actionConfirmBtn').textContent = confirmText || 'Confirm';
+        if (title) document.getElementById('actionConfirmLabel').textContent = title;
         new bootstrap.Modal('#actionConfirmModal').show();
       }
       document.getElementById('actionConfirmBtn').addEventListener('click', function(){
@@ -121,7 +122,7 @@
                            <div class="small text-secondary">${dt}</div>
                            <div class="mt-2 text-danger">This appointment will be cancelled.</div>`;
           pendingSubmit = () => form.submit();
-          showConfirm(summary, 'Cancel Appointment');
+          showConfirm(summary, 'Cancel Appointment', 'Do you want to cancel this appointment?');
         }
 
         const resBtn = e.target.closest('[data-action="resched"]');
@@ -141,7 +142,7 @@
                            <div class="small text-secondary">From: ${oldDt}</div>
                            <div class="small text-secondary">To: ${newDt}</div>`;
           pendingSubmit = () => form.submit();
-          showConfirm(summary, 'Confirm Reschedule');
+          showConfirm(summary, 'Confirm Reschedule', 'Do you want to reschedule this appointment?');
         }
       });
     })();

@@ -60,13 +60,13 @@
               <span class="badge <?= $badge ?>"><?= htmlspecialchars($row['status']) ?></span>
             </td>
             <td>
-              <form method="post" action="/admin/appointments/reschedule" class="row">
-                <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf) ?>" />
-                <input type="hidden" name="id" value="<?= htmlspecialchars($row['id']) ?>" />
-                <input class="form-control form-control-sm" style="width:auto" type="date" name="date" value="<?= htmlspecialchars($row['date']) ?>" required />
-                <input class="form-control form-control-sm" style="width:auto" type="time" name="slot" value="<?= htmlspecialchars($row['slot']) ?>" required />
-                <button class="btn btn-sm btn-primary" type="submit" data-action="resched" data-name="<?= htmlspecialchars($row['name']) ?>" data-email="<?= htmlspecialchars($row['email']) ?>" data-old="<?= htmlspecialchars(format_appt_display($row['date'], $row['slot'])) ?>" data-bs-toggle="tooltip" data-bs-title="Reschedule appointment" aria-label="Reschedule appointment">Update</button>
-              </form>
+            <form method="post" action="/admin/appointments/reschedule" class="d-inline-flex align-items-center gap-2 flex-wrap inline-resched">
+              <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf) ?>" />
+              <input type="hidden" name="id" value="<?= htmlspecialchars($row['id']) ?>" />
+              <input class="form-control form-control-sm" type="date" name="date" value="<?= htmlspecialchars($row['date']) ?>" required />
+              <input class="form-control form-control-sm" type="time" name="slot" value="<?= htmlspecialchars($row['slot']) ?>" required />
+              <button class="btn btn-sm btn-primary" type="submit" data-action="resched" data-name="<?= htmlspecialchars($row['name']) ?>" data-email="<?= htmlspecialchars($row['email']) ?>" data-old="<?= htmlspecialchars(format_appt_display($row['date'], $row['slot'])) ?>" data-bs-toggle="tooltip" data-bs-title="Reschedule appointment" aria-label="Reschedule appointment">Update</button>
+            </form>
             </td>
           </tr>
         <?php endforeach; ?>
