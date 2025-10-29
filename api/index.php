@@ -223,10 +223,10 @@ try {
             '</ul>';
 
         send_email('info@drrootsdc.in', $subject, $clinicBody, $ics);
-        // Only email the patient on create if enabled in config
-        if (($__APP_CONFIG['PATIENT_EMAIL_ON_CREATE'] ?? false) === true) {
-            send_email($email, $subject, $patientBody, $ics);
-        }
+        /* Patient email on create is disabled server-side. It will be sent on admin confirmation. */
+        // if (($__APP_CONFIG['PATIENT_EMAIL_ON_CREATE'] ?? false) === true) {
+        //     send_email($email, $subject, $patientBody, $ics);
+        // }
         // Increment ip_activity after successful booking
         $inc = $pdo->prepare('INSERT INTO ip_activity (ip,date,endpoint,count) VALUES (?,?,?,1) ON DUPLICATE KEY UPDATE count = count + 1');
         $inc->execute([$ipBin, $todayStr, 'appointments']);
