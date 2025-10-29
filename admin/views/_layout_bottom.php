@@ -72,5 +72,79 @@
       }
     });
   </script>
+  <!-- Global Confirm Modal reused for cancel/reschedule -->
+  <div class="modal fade" id="actionConfirmModal" tabindex="-1" aria-labelledby="actionConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background:#111827; color:#e5e7eb; border:1px solid rgba(255,255,255,.08)">
+        <div class="modal-header">
+          <h5 class="modal-title" id="actionConfirmLabel">Confirm Action</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="small text-secondary mb-2">Please confirm the following:</div>
+          <div id="actionSummary" class="fw-medium"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="actionConfirmBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Intercept cancel and reschedule everywhere (pending/today/appointments tables)
+    (function(){
+      let pendingSubmit = null;
+      function showConfirm(html, confirmText){
+        document.getElementById('actionSummary').innerHTML = html;
+        document.getElementById('actionConfirmBtn').textContent = confirmText || 'Confirm';
+        new bootstrap.Modal('#actionConfirmModal').show();
+      }
+      document.getElementById('actionConfirmBtn').addEventListener('click', function(){
+        const modal = bootstrap.Modal.getInstance(document.getElementById('actionConfirmModal'));
+        if (pendingSubmit) pendingSubmit();
+        pendingSubmit = null;
+        modal.hide();
+      });
+
+      document.addEventListener('click', function(e){
+        const cancelBtn = e.target.closest('[data-action="cancel"]');
+        if (cancelBtn) {
+          e.preventDefault();
+          const form = cancelBtn.closest('form');
+          const name = cancelBtn.getAttribute('data-name') || '';
+          const email = cancelBtn.getAttribute('data-email') || '';
+          const dt = cancelBtn.getAttribute('data-datetime') || '';
+          const summary = `<div><strong>${name}</strong></div>
+                           <div class="small text-secondary">${email}</div>
+                           <div class="small text-secondary">${dt}</div>
+                           <div class="mt-2 text-danger">This appointment will be cancelled.</div>`;
+          pendingSubmit = () => form.submit();
+          showConfirm(summary, 'Cancel Appointment');
+        }
+
+        const resBtn = e.target.closest('[data-action="resched"]');
+        if (resBtn) {
+          e.preventDefault();
+          const form = resBtn.closest('form');
+          const dateInput = form.querySelector('input[type="date"]');
+          const timeInput = form.querySelector('input[type="time"]');
+          const newDate = dateInput && dateInput.value || '';
+          const newTime = timeInput && timeInput.value || '';
+          const name = resBtn.getAttribute('data-name') || '';
+          const email = resBtn.getAttribute('data-email') || '';
+          const oldDt = resBtn.getAttribute('data-old') || '';
+          const newDt = (newDate && newTime) ? `${newDate} ${newTime}` : '(pick date & time)';
+          const summary = `<div><strong>${name}</strong></div>
+                           <div class="small text-secondary">${email}</div>
+                           <div class="small text-secondary">From: ${oldDt}</div>
+                           <div class="small text-secondary">To: ${newDt}</div>`;
+          pendingSubmit = () => form.submit();
+          showConfirm(summary, 'Confirm Reschedule');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
