@@ -67,6 +67,18 @@ function today_midnight(): DateTimeImmutable {
     return $now->setTime(0, 0, 0);
 }
 
+function format_appt_display(string $date, string $slot): string {
+    try {
+        $dt = new DateTimeImmutable(trim($date . ' ' . $slot));
+    } catch (Throwable $e) {
+        // Fallback to raw if parsing fails
+        return trim($date . ' ' . $slot);
+    }
+    $minutes = $dt->format('i');
+    $fmt = $minutes === '00' ? 'j M Y g A' : 'j M Y g:i A';
+    return $dt->format($fmt);
+}
+
 function build_ics(array $appointment): string {
     // Minimal ICS content for a 30-minute slot in local time
     $dt = new DateTimeImmutable($appointment['date'] . ' ' . $appointment['slot']);
