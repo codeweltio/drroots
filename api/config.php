@@ -26,4 +26,9 @@ return [
     'DB_PASS' => '5]Fs}H7{tkH~7oaR',
     // Use utf8mb4 as the connection charset. Your DB collation is utf8mb4_unicode_ci.
     'DB_CHARSET' => 'utf8mb4',
+
+    // Controls whether the patient receives an email immediately on booking.
+    // When false, only the clinic is notified at booking; the patient is emailed
+    // on admin confirmation/reschedule/cancel actions.
+    'PATIENT_EMAIL_ON_CREATE' => false,
 ];
