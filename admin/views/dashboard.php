@@ -98,6 +98,8 @@
       .action-buttons { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
       .btn { height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid transparent; background: #5a67d8; color: #fff; cursor: pointer; font-size: 13px; }
       .inline-input { height: 32px; padding: 4px 8px; font-size: 13px; }
+      .inline-input[type="date"]{ min-width: 9rem; }
+      .inline-input[type="time"]{ min-width: 6rem; }
       .badge { padding: 4px 8px; border-radius: 999px; font-size: 12px; }
       .badge--pending { background:#fff7ed; color:#9a3412; }
       .badge--confirmed { background:#ecfdf5; color:#065f46; }
@@ -154,7 +156,7 @@
           { field:'email', headerName:'Email', width: 260 },
           { field:'datetime', headerName:'Date/Time', width: 200 },
           { field:'status', headerName:'Status', width: 130, cellRenderer: statusRenderer },
-          { headerName:'Reschedule', width: 360, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer },
+          { headerName:'Reschedule', width: 420, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer },
         ];
 
         const gridOptions = { columnDefs: cols, rowData: rows, defaultColDef:{sortable:true, filter:true, resizable:true}, rowHeight:56, headerHeight:56, suppressMovableColumns:true, animateRows:true };

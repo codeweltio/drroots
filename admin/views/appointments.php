@@ -91,6 +91,8 @@
       .btn.primary { background: #5a67d8; color: #fff; }
       .btn.danger { border-color: #fecaca; color: #b91c1c; background: #fee2e2; }
       .inline-input { height: 32px; padding: 4px 8px; font-size: 13px; }
+      .inline-input[type="date"]{ min-width: 9rem; }
+      .inline-input[type="time"]{ min-width: 6rem; }
     </style>
 
     <div id="apptGrid" class="ag-theme-quartz appt-theme grid-wrap"></div>
@@ -161,7 +163,7 @@
           { field:'datetime', headerName:'Date/Time', width: 200 },
         ];
         if (showStatus) cols.push({ field:'status', headerName:'Status', width: 130 });
-        cols.push({ headerName:'Actions', width: 340, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer });
+        cols.push({ headerName:'Actions', width: 420, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer });
 
         const gridOptions = {
           columnDefs: cols,
