@@ -38,7 +38,8 @@
       .ag-theme-quartz.users-theme .ag-header { background: #5a67d8; color: #fff; }
       .ag-theme-quartz.users-theme .ag-header-cell-text { color: #fff; font-weight: 600; }
       .ag-theme-quartz.users-theme .ag-row-odd { background: #f3f0ff; }
-      .ag-theme-quartz.users-theme .ag-row-hover { background: #eef2ff !important; }
+      .ag-theme-quartz.users-theme .ag-row-even { background: #f0f9ff; }
+      .ag-theme-quartz.users-theme .ag-row-hover { background: #dbeafe !important; }
       .ag-theme-quartz.users-theme { --ag-font-size: 14px; --ag-grid-size: 4px; }
       .grid-wrap { height: 520px; }
       .action-buttons { display:flex; align-items:center; gap:8px; justify-content:flex-end; flex-wrap: wrap; }

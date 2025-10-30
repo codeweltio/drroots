@@ -36,7 +36,8 @@
       .ag-theme-quartz.activity-theme .ag-header { background: #5a67d8; color: #fff; }
       .ag-theme-quartz.activity-theme .ag-header-cell-text { color: #fff; font-weight: 600; }
       .ag-theme-quartz.activity-theme .ag-row-odd { background: #f3f0ff; }
-      .ag-theme-quartz.activity-theme .ag-row-hover { background: #eef2ff !important; }
+      .ag-theme-quartz.activity-theme .ag-row-even { background: #f0f9ff; }
+      .ag-theme-quartz.activity-theme .ag-row-hover { background: #dbeafe !important; }
       .ag-theme-quartz.activity-theme { --ag-font-size: 14px; --ag-grid-size: 4px; }
       .grid-wrap { height: 560px; }
       code.meta { font-size: 12px; }
