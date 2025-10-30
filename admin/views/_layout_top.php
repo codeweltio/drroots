@@ -18,10 +18,18 @@
         <a href="/admin/appointments?status=pending">Pending</a>
         <a href="/admin/appointments?status=confirmed">Confirmed</a>
         <a href="/admin/appointments?status=cancelled">Cancelled</a>
-        <a href="/admin/users">Users</a>
-        <a href="/admin/activity">Activity</a>
+        <?php $__role = $_SESSION['user']['role'] ?? null; if ($__role === 'admin'): ?>
+          <a href="/admin/users">Users</a>
+          <a href="/admin/activity">Activity</a>
+        <?php endif; ?>
         <span class="right"><a href="/admin/logout">Logout</a></span>
       </nav>
     </div>
   </header>
   <main class="container">
+  <?php if (!empty($_SESSION['flash'])): $f = $_SESSION['flash']; unset($_SESSION['flash']); $t = $f['type'] ?? 'info'; $msg = htmlspecialchars((string)($f['msg'] ?? '')); $cls = in_array($t,['success','warning','danger','info'], true) ? $t : 'info'; ?>
+    <div class="alert alert-<?= $cls ?> alert-dismissible fade show" role="alert" style="margin-top:12px">
+      <?= $msg ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endif; ?>

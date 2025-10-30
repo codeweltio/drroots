@@ -14,7 +14,18 @@ function is_logged_in(): bool { return isset($_SESSION['user']); }
 function require_login(): void { if (!is_logged_in()) { header('Location: /admin/login'); exit; } }
 function csrf_token(): string { if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16)); return $_SESSION['csrf']; }
 function check_csrf(): void { if ($_SERVER['REQUEST_METHOD']==='POST') { $t = $_POST['csrf'] ?? ''; if (!$t || !hash_equals($_SESSION['csrf'] ?? '', $t)) { http_response_code(400); echo 'Invalid CSRF token'; exit; } } }
-function require_admin(): void { if (!is_logged_in() || (($_SESSION['user']['role'] ?? '') !== 'admin')) { http_response_code(403); echo 'Forbidden'; exit; } }
+function require_admin(): void {
+    $isAdmin = is_logged_in() && (($_SESSION['user']['role'] ?? '') === 'admin');
+    if ($isAdmin) return;
+    // For GET requests, redirect to dashboard with a flash message instead of a hard 403
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+        $_SESSION['flash'] = [ 'type' => 'warning', 'msg' => 'You need admin access to view that page.' ];
+        header('Location: /admin');
+        exit;
+    }
+    // For POST/others, keep 403 to avoid masking failed actions
+    http_response_code(403); echo 'Forbidden'; exit;
+}
 
 function audit_log(array $actor, string $action, string $entityType, string $entityId, array $meta = []): void {
     // Try DB first (activity_log); fall back to file.
