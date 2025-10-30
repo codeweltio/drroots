@@ -13,6 +13,8 @@
       .ag-theme-quartz.appt-theme .ag-header { background: #5a67d8; color: #fff; }
       .ag-theme-quartz.appt-theme .ag-header-cell-text { color: #fff; font-weight: 600; }
       .ag-theme-quartz.appt-theme .ag-row-odd { background: #f3f0ff; }
+      /* Make even rows a soft blue instead of white */
+      .ag-theme-quartz.appt-theme .ag-row-even { background: #edf2ff; }
       .ag-theme-quartz.appt-theme .ag-row-hover { background: #eef2ff !important; }
       .ag-theme-quartz.appt-theme { --ag-font-size: 14px; --ag-grid-size: 4px; }
       .grid-wrap { height: 560px; }
@@ -20,7 +22,8 @@
       .btn { height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid transparent; background: #fff; color: #374151; cursor: pointer; font-size: 13px; }
       .btn.primary { background: #5a67d8; color: #fff; }
       .btn.danger { border-color: #fecaca; color: #b91c1c; background: #fee2e2; }
-      .inline-input { height: 32px; padding: 4px 8px; font-size: 13px; }
+      .inline-input { height: 32px; padding: 4px 8px; font-size: 13px; background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; color:#111827; }
+      .inline-input:focus { outline:none; box-shadow: 0 0 0 2px rgba(90,103,216,0.25); border-color:#818cf8; }
       .inline-input[type="date"]{ min-width: 9rem; }
       .inline-input[type="time"]{ min-width: 6rem; }
       @media (max-width: 640px){
