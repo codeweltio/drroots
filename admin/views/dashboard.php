@@ -45,6 +45,7 @@
               'id' => $r['id'],
               'name' => $r['name'],
               'email' => $r['email'],
+              'mobile' => $r['phone'] ?? '',
               'datetime' => format_appt_display($r['date'], $r['slot']),
               'date' => $r['date'],
               'slot' => $r['slot'],
@@ -84,7 +85,8 @@
           { field:'datetime', headerName:'Date/Time', width: 200 },
           { field:'status', headerName:'Status', width: 130, cellRenderer: statusRenderer },
           { field:'email', headerName:'Email', width: 260 },
-          { headerName:'Reschedule', width: 420, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer },
+          { field:'mobile', headerName:'Mobile', width: 160 },
+          { headerName:'Reschedule', width: 350, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer },
         ];
 
         const gridOptions = { columnDefs: cols, rowData: rows, defaultColDef:{sortable:true, filter:true, resizable:true}, rowHeight:56, headerHeight:56, suppressMovableColumns:true, animateRows:true,
@@ -150,6 +152,7 @@
               'id' => $r['id'],
               'name' => $r['name'],
               'email' => $r['email'],
+              'mobile' => $r['phone'] ?? '',
               'datetime' => format_appt_display($r['date'], $r['slot']),
               'reason' => $r['reason'] ?? ''
             ];
@@ -181,6 +184,7 @@
         const columnDefs = [
           { field: 'name', headerName: 'Name', width: 240 },
           { field: 'email', headerName: 'Email', width: 260 },
+          { field: 'mobile', headerName: 'Mobile', width: 160 },
           { field: 'datetime', headerName: 'Date/Time', width: 200 },
           { field: 'reason', headerName: 'Reason', flex: 1, minWidth: 220 },
           { headerName: 'Actions', width: 220, pinned: 'right', sortable: false, filter: false, resizable: false, cellRenderer: actionsRenderer }
