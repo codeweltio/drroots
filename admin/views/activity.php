@@ -50,6 +50,10 @@
       .ag-theme-quartz.activity-theme { --ag-font-size: 14px; --ag-grid-size: 4px; }
       .grid-wrap { height: 560px; }
       code.meta { font-size: 12px; }
+      @media (max-width: 640px){
+        .grid-wrap { height: 70vh; }
+        .ag-theme-quartz.activity-theme { --ag-font-size: 12px; }
+      }
     </style>
 
     <div id="activityGrid" class="ag-theme-quartz activity-theme grid-wrap"></div>
@@ -82,8 +86,14 @@
           { field:'meta', headerName:'Details', flex: 1, minWidth: 300, cellRenderer: metaRenderer },
         ];
 
-        const gridOptions = { columnDefs: cols, rowData: rows, defaultColDef:{sortable:true, filter:true, resizable:true}, rowHeight:48, headerHeight:56, suppressMovableColumns:true, animateRows:true };
-        document.addEventListener('DOMContentLoaded', function(){ const el=document.getElementById('activityGrid'); if (el) agGrid.createGrid(el, gridOptions); });
+        const gridOptions = { columnDefs: cols, rowData: rows, defaultColDef:{sortable:true, filter:true, resizable:true}, rowHeight:48, headerHeight:56, suppressMovableColumns:true, animateRows:true,
+          onFirstDataRendered: (p)=>{ if (window.innerWidth <= 640) p.api.sizeColumnsToFit(); }
+        };
+        document.addEventListener('DOMContentLoaded', function(){
+          const el=document.getElementById('activityGrid'); if (!el) return;
+          const api = agGrid.createGrid(el, gridOptions);
+          let t=null; window.addEventListener('resize', function(){ if (window.innerWidth > 640) return; clearTimeout(t); t=setTimeout(()=>{ try { api.api.sizeColumnsToFit(); } catch(e){} }, 150); });
+        });
       })();
     </script>
   <?php endif; ?>

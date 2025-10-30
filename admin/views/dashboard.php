@@ -28,6 +28,10 @@
       .badge--pending { background:#fff7ed; color:#9a3412; }
       .badge--confirmed { background:#ecfdf5; color:#065f46; }
       .badge--cancelled { background:#fef2f2; color:#b91c1c; }
+      @media (max-width: 640px){
+        .grid-wrap { height: 70vh; }
+        .ag-theme-quartz.today-theme { --ag-font-size: 12px; }
+      }
     </style>
 
     <div id="todayGrid" class="ag-theme-quartz today-theme grid-wrap"></div>
@@ -83,8 +87,23 @@
           { headerName:'Reschedule', width: 420, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer },
         ];
 
-        const gridOptions = { columnDefs: cols, rowData: rows, defaultColDef:{sortable:true, filter:true, resizable:true}, rowHeight:56, headerHeight:56, suppressMovableColumns:true, animateRows:true };
-        document.addEventListener('DOMContentLoaded', function(){ const el=document.getElementById('todayGrid'); if (el) agGrid.createGrid(el, gridOptions); });
+        const gridOptions = { columnDefs: cols, rowData: rows, defaultColDef:{sortable:true, filter:true, resizable:true}, rowHeight:56, headerHeight:56, suppressMovableColumns:true, animateRows:true,
+          onFirstDataRendered: (p)=>{
+            if (window.innerWidth <= 640) {
+              p.columnApi.applyColumnState({ defaultState: { pinned: null } });
+              p.api.sizeColumnsToFit();
+            }
+          }
+        };
+        document.addEventListener('DOMContentLoaded', function(){
+          const el=document.getElementById('todayGrid');
+          if (!el) return;
+          const api = agGrid.createGrid(el, gridOptions);
+          let t=null; window.addEventListener('resize', function(){
+            if (window.innerWidth > 640) return; clearTimeout(t);
+            t=setTimeout(()=>{ try { api.api.sizeColumnsToFit(); } catch(e){} }, 150);
+          });
+        });
       })();
     </script>
   <?php endif; ?>
@@ -114,6 +133,10 @@
       .btn { height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid transparent; background: #fff; color: #374151; cursor: pointer; font-size: 13px; }
       .btn.primary { background: #5a67d8; color: #fff; }
       .btn.danger { border-color: #fecaca; color: #b91c1c; background: #fee2e2; }
+      @media (max-width: 640px){
+        .grid-wrap { height: 70vh; }
+        .ag-theme-quartz.dashboard-theme { --ag-font-size: 12px; }
+      }
     </style>
 
     <div id="pendingGrid" class="ag-theme-quartz dashboard-theme grid-wrap"></div>
@@ -171,12 +194,23 @@
           headerHeight: 56,
           suppressMovableColumns: true,
           animateRows: true,
-          pagination: false
+          pagination: false,
+          onFirstDataRendered: (p)=>{
+            if (window.innerWidth <= 640) {
+              p.columnApi.applyColumnState({ defaultState: { pinned: null } });
+              p.api.sizeColumnsToFit();
+            }
+          }
         };
 
         document.addEventListener('DOMContentLoaded', function(){
           const el = document.getElementById('pendingGrid');
-          if (el) agGrid.createGrid(el, gridOptions);
+          if (!el) return;
+          const api = agGrid.createGrid(el, gridOptions);
+          let t=null; window.addEventListener('resize', function(){
+            if (window.innerWidth > 640) return; clearTimeout(t);
+            t=setTimeout(()=>{ try { api.api.sizeColumnsToFit(); } catch(e){} }, 150);
+          });
         });
       })();
     </script>

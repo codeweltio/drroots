@@ -23,6 +23,10 @@
       .inline-input { height: 32px; padding: 4px 8px; font-size: 13px; }
       .inline-input[type="date"]{ min-width: 9rem; }
       .inline-input[type="time"]{ min-width: 6rem; }
+      @media (max-width: 640px){
+        .grid-wrap { height: 70vh; }
+        .ag-theme-quartz.appt-theme { --ag-font-size: 12px; }
+      }
     </style>
 
     <div id="apptGrid" class="ag-theme-quartz appt-theme grid-wrap"></div>
@@ -102,11 +106,22 @@
           rowHeight: 56, headerHeight: 56,
           suppressMovableColumns: true,
           animateRows: true,
-          pagination: false
+          pagination: false,
+          onFirstDataRendered: (p)=>{
+            if (window.innerWidth <= 640) {
+              p.columnApi.applyColumnState({ defaultState: { pinned: null } });
+              p.api.sizeColumnsToFit();
+            }
+          }
         };
 
         document.addEventListener('DOMContentLoaded', function(){
-          const el = document.getElementById('apptGrid'); if (el) agGrid.createGrid(el, gridOptions);
+          const el = document.getElementById('apptGrid'); if (!el) return;
+          const api = agGrid.createGrid(el, gridOptions);
+          let t=null; window.addEventListener('resize', function(){
+            if (window.innerWidth > 640) return; clearTimeout(t);
+            t=setTimeout(()=>{ try { api.api.sizeColumnsToFit(); } catch(e){} }, 150);
+          });
         });
       })();
     </script>

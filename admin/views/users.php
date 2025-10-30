@@ -47,6 +47,10 @@
       .btn.danger { border-color:#fecaca; color:#b91c1c; background:#fee2e2; }
       .inline-input { height: 32px; padding: 4px 8px; font-size: 13px; }
       .inline-select { height: 32px; padding: 4px 8px; font-size: 13px; }
+      @media (max-width: 640px){
+        .grid-wrap { height: 70vh; }
+        .ag-theme-quartz.users-theme { --ag-font-size: 12px; }
+      }
     </style>
 
     <div id="usersGrid" class="ag-theme-quartz users-theme grid-wrap"></div>
@@ -99,11 +103,22 @@
         const gridOptions = {
           columnDefs: cols, rowData: rows,
           defaultColDef: { sortable:true, filter:true, resizable:true },
-          rowHeight: 64, headerHeight: 56, suppressMovableColumns:true, animateRows:true, pagination:false
+          rowHeight: 64, headerHeight: 56, suppressMovableColumns:true, animateRows:true, pagination:false,
+          onFirstDataRendered: (p)=>{
+            if (window.innerWidth <= 640) {
+              p.columnApi.applyColumnState({ defaultState: { pinned: null } });
+              p.api.sizeColumnsToFit();
+            }
+          }
         };
 
         document.addEventListener('DOMContentLoaded', function(){
-          const el = document.getElementById('usersGrid'); if (el) agGrid.createGrid(el, gridOptions);
+          const el = document.getElementById('usersGrid'); if (!el) return;
+          const api = agGrid.createGrid(el, gridOptions);
+          let t=null; window.addEventListener('resize', function(){
+            if (window.innerWidth > 640) return; clearTimeout(t);
+            t=setTimeout(()=>{ try { api.api.sizeColumnsToFit(); } catch(e){} }, 150);
+          });
         });
       })();
     </script>
