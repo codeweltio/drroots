@@ -83,9 +83,10 @@
         const cols = [
           { field:'name', headerName:'Name', width: 220 },
           { field:'datetime', headerName:'Date/Time', width: 200 },
-          { field:'status', headerName:'Status', width: 130, cellRenderer: statusRenderer },
-          { field:'email', headerName:'Email', width: 260 },
+          { field:'status', headerName:'Status', width: 100, cellRenderer: statusRenderer },
           { field:'mobile', headerName:'Mobile', width: 160 },
+          { field:'email', headerName:'Email', width: 260 },
+
           { headerName:'Reschedule', width: 350, pinned:'right', sortable:false, filter:false, resizable:false, cellRenderer: actionsRenderer },
         ];
 
