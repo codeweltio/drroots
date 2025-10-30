@@ -92,8 +92,8 @@
         const showStatus = status !== 'confirmed';
         const cols = [
           { field:'name', headerName:'Name', width: 220 },
-          { field:'email', headerName:'Email', width: 240 },
           { field:'phone', headerName:'Phone', width: 160, cellRenderer: phoneRenderer },
+          { field:'email', headerName:'Email', width: 240 },
           { field:'datetime', headerName:'Date/Time', width: 200 },
         ];
         if (showStatus) cols.push({ field:'status', headerName:'Status', width: 130 });
