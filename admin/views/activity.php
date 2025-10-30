@@ -27,29 +27,14 @@
   </form>
   <?php if (empty($events)): ?>
     <p>No activity recorded yet.</p>
-  <?php else: ?>
-    <div class="table-wrap">
-    <table>
-      <tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Details</th></tr>
-      <?php foreach ($events as $e): ?>
-        <tr>
-          <td><?= htmlspecialchars($e['ts'] ?? '') ?></td>
-          <td><?= htmlspecialchars(($e['actor_email'] ?? '') ?: ($e['actor_id'] ?? '')) ?></td>
-          <td><?= htmlspecialchars($e['action'] ?? '') ?></td>
-          <td><?= htmlspecialchars(($e['entity'] ?? '').'#'.($e['entity_id'] ?? '')) ?></td>
-          <td><code style="font-size:12px;"><?= htmlspecialchars(json_encode($e['meta'] ?? [])) ?></code></td>
-        </tr>
-      <?php endforeach; ?>
-    </table>
-    </div>
   <?php endif; ?>
 </div>
 
-<!-- AG Grid version of Activity -->
+<!-- Activity (AG Grid) -->
 <div class="card">
   <div class="section-title">
-    <h3>Activity (Grid)</h3>
-    <span class="subtle">AG Grid view</span>
+    <h3>Activity</h3>
+    <span class="subtle">Recent admin actions (last 200)</span>
   </div>
   <?php if (empty($events)): ?>
     <p>No activity recorded yet.</p>
