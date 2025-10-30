@@ -3,27 +3,17 @@
     <h3>Activity</h3>
     <span class="subtle">Recent admin actions (last 200)</span>
   </div>
-  <form method="get" action="/admin/activity" class="row mb-16">
-    <div class="stack">
-      <label>Action</label>
-      <input type="text" name="action" value="<?= htmlspecialchars($filters['action'] ?? '') ?>" placeholder="confirm | cancel | reschedule | create | ..." />
-    </div>
-    <div class="stack">
-      <label>Actor (email)</label>
-      <input type="email" name="actor" value="<?= htmlspecialchars($filters['actor'] ?? '') ?>" placeholder="staff@example.com" />
-    </div>
-    <div class="stack">
-      <label>From</label>
-      <input type="date" name="from" value="<?= htmlspecialchars($filters['from'] ?? '') ?>" />
-    </div>
-    <div class="stack">
-      <label>To</label>
-      <input type="date" name="to" value="<?= htmlspecialchars($filters['to'] ?? '') ?>" />
-    </div>
-    <div class="stack" style="align-self:end;">
-      <button class="btn" type="submit">Filter</button>
-      <a class="btn" href="/admin/activity" style="margin-left:6px;">Reset</a>
-    </div>
+  <form method="get" action="/admin/activity" class="activity-filter">
+    <label class="sr-only" for="af-action">Action</label>
+    <input id="af-action" type="text" name="action" value="<?= htmlspecialchars($filters['action'] ?? '') ?>" placeholder="confirm | cancel | reschedule | create | ..." />
+    <label class="sr-only" for="af-actor">Actor (email)</label>
+    <input id="af-actor" type="email" name="actor" value="<?= htmlspecialchars($filters['actor'] ?? '') ?>" placeholder="staff@example.com" />
+    <label class="sr-only" for="af-from">From</label>
+    <input id="af-from" type="date" name="from" value="<?= htmlspecialchars($filters['from'] ?? '') ?>" />
+    <label class="sr-only" for="af-to">To</label>
+    <input id="af-to" type="date" name="to" value="<?= htmlspecialchars($filters['to'] ?? '') ?>" />
+    <button class="btn sm primary" type="submit">Filter</button>
+    <a class="btn sm ghost" href="/admin/activity">Reset</a>
   </form>
   <?php if (empty($events)): ?>
     <p>No activity recorded yet.</p>
