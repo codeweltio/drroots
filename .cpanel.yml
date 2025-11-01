@@ -1,38 +1,15 @@
 ---
 deployment:
   tasks:
-    - /bin/bash -lc '
-        set -e
-        DEPLOYPATH="/home/drrootsdc/betaroot"         # <- change if your web folder is different
-        SOURCE="$PWD"                                  # repo root cPanel checked out
-        LOG="/home/drrootsdc/deploy.log"
+    # log a unique marker so we know THIS file ran
+    - /bin/echo "===== DIAG v1 $(/bin/date) =====" >> /home/drrootsdc/deploy.log
 
-        {
-          echo "----"
-          echo "Deploy to $DEPLOYPATH"
-          echo "Started: $(date)"
-          echo "PWD: $SOURCE"
-          echo "Listing SOURCE:"
-          ls -la "$SOURCE"
+    # show where cPanel is executing from and what's there
+    - /bin/pwd >> /home/drrootsdc/deploy.log
+    - /bin/ls -la >> /home/drrootsdc/deploy.log
 
-          # Ensure target exists
-          mkdir -p "$DEPLOYPATH"
+    # ensure target exists
+    - /bin/mkdir -p /home/drrootsdc/betaroot
 
-          # Find rsync if available
-          RSYNC="$(command -v rsync || true)"
-          echo "RSYNC: ${RSYNC:-not found}"
-
-          if [ -n "$RSYNC" ]; then
-            "$RSYNC" -av --delete \
-              --exclude ".git" \
-              --exclude ".cpanel.yml" \
-              "$SOURCE"/ "$DEPLOYPATH"/
-          else
-            echo "rsync not found; falling back to cp -a"
-            # copy everything including dotfiles
-            cp -a "$SOURCE"/. "$DEPLOYPATH"/
-          fi
-
-          echo "Finished: $(date)"
-        } >> "$LOG" 2>&1
-      '
+    # try rsync, if it fails fall back to cp -a (and log stderr)
+    - /usr/bin/rsync -av --delete --exclude ".git" --exclude ".cpanel.yml" ./ /home/drrootsdc/betaroot/ >> /home/drrootsdc/deploy.log 2>&1 || /bin/bash -lc 'echo "rsync failed or missing; using cp -a" >> /home/drrootsdc/deploy.log; cp -a ./.[!.]* ./..?* ./* /home/drrootsdc/betaroot/ 2>> /home/drrootsdc/deploy.log'
