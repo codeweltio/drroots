@@ -1,4 +1,9 @@
 ---
 deployment:
   tasks:
-    - echo "Deploy started at $(date)" > /home/drrootsdc/deploy.log
+    - export DEPLOYPATH=/home/drrootsdc/betaroot
+    - echo "Deploy to $DEPLOYPATH at $(date)" >> /home/drrootsdc/deploy.log
+    - /usr/bin/rsync -a --delete \
+        --exclude ".git" \
+        --exclude ".cpanel.yml" \
+        ./ "$DEPLOYPATH"/
