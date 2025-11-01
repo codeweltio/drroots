@@ -1,9 +1,38 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/drrootsdc/betaroot
-    - echo "Deploy to $DEPLOYPATH at $(date)" >> /home/drrootsdc/deploy.log
-    - /usr/bin/rsync -a --delete \
-        --exclude ".git" \
-        --exclude ".cpanel.yml" \
-        ./ "$DEPLOYPATH"/
+    - /bin/bash -lc '
+        set -e
+        DEPLOYPATH="/home/drrootsdc/betaroot"         # <- change if your web folder is different
+        SOURCE="$PWD"                                  # repo root cPanel checked out
+        LOG="/home/drrootsdc/deploy.log"
+
+        {
+          echo "----"
+          echo "Deploy to $DEPLOYPATH"
+          echo "Started: $(date)"
+          echo "PWD: $SOURCE"
+          echo "Listing SOURCE:"
+          ls -la "$SOURCE"
+
+          # Ensure target exists
+          mkdir -p "$DEPLOYPATH"
+
+          # Find rsync if available
+          RSYNC="$(command -v rsync || true)"
+          echo "RSYNC: ${RSYNC:-not found}"
+
+          if [ -n "$RSYNC" ]; then
+            "$RSYNC" -av --delete \
+              --exclude ".git" \
+              --exclude ".cpanel.yml" \
+              "$SOURCE"/ "$DEPLOYPATH"/
+          else
+            echo "rsync not found; falling back to cp -a"
+            # copy everything including dotfiles
+            cp -a "$SOURCE"/. "$DEPLOYPATH"/
+          fi
+
+          echo "Finished: $(date)"
+        } >> "$LOG" 2>&1
+      '
