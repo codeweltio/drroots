@@ -1,5 +1,4 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/drrootsdc/testdep
-    - /bin/rsync -a --delete --exclude ".git" --exclude ".cpanel.yml" --exclude "config.php"./ $DEPLOYPATH/
+    - echo "Deploy started at $(date)" > /home/drrootsdc/deploy.log
