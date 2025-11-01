@@ -3,7 +3,7 @@ deployment:
   tasks:
     - /bin/bash -lc '
         set -euo pipefail
-        DEPLOYPATH="/home/drrootsdc/betaroot"   # change to /home/drrootsdc/public_html/betaroot if that is your web path
+        DEPLOYPATH="/home/drrootsdc/betaroot1"   # change to /home/drrootsdc/public_html/betaroot if that is your web path
         SOURCE="/home/drrootsdc/repositories/betaroot"
         LOG="/home/drrootsdc/deploy.log"
 
