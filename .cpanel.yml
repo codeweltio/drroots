@@ -1,15 +1,43 @@
 ---
 deployment:
   tasks:
-    # log a unique marker so we know THIS file ran
-    - /bin/echo "===== DIAG v1 $(/bin/date) =====" >> /home/drrootsdc/deploy.log
+    - /bin/bash -lc '
+        set -euo pipefail
+        DEPLOYPATH="/home/drrootsdc/betaroot"   # change to /home/drrootsdc/public_html/betaroot if that is your web path
+        SOURCE="$PWD"
+        LOG="/home/drrootsdc/deploy.log"
 
-    # show where cPanel is executing from and what's there
-    - /bin/pwd >> /home/drrootsdc/deploy.log
-    - /bin/ls -la >> /home/drrootsdc/deploy.log
+        {
+          echo "===== FIX v2 $(date) ====="
+          echo "SRC: $SOURCE"
+          echo "DST: $DEPLOYPATH"
 
-    # ensure target exists
-    - /bin/mkdir -p /home/drrootsdc/betaroot
+          # Ensure destination exists and is writable
+          mkdir -p "$DEPLOYPATH"
+          chmod -R u+rwX "$DEPLOYPATH" || true
 
-    # try rsync, if it fails fall back to cp -a (and log stderr)
-    - /usr/bin/rsync -av --delete --exclude ".git" --exclude ".cpanel.yml" ./ /home/drrootsdc/betaroot/ >> /home/drrootsdc/deploy.log 2>&1 || /bin/bash -lc 'echo "rsync failed or missing; using cp -a" >> /home/drrootsdc/deploy.log; cp -a ./.[!.]* ./..?* ./* /home/drrootsdc/betaroot/ 2>> /home/drrootsdc/deploy.log'
+          # Never keep a .git inside the live folder
+          if [ -d "$DEPLOYPATH/.git" ]; then
+            echo "Removing stray .git in destination"
+            rm -rf "$DEPLOYPATH/.git"
+          fi
+
+          # Use rsync if present (wherever it is), else tar fallback that excludes .git and .cpanel.yml
+          RSYNC="$(command -v rsync || true)"
+          if [ -n "$RSYNC" ]; then
+            echo "Using rsync at: $RSYNC"
+            "$RSYNC" -a --delete \
+              --exclude ".git" \
+              --exclude ".cpanel.yml" \
+              "$SOURCE"/ "$DEPLOYPATH"/
+          else
+            echo "rsync not found; using tar fallback"
+            # Wipe current contents (safe sync)
+            find "$DEPLOYPATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            # Copy everything except .git and .cpanel.yml
+            ( cd "$SOURCE" && tar --exclude=.git --exclude=.cpanel.yml -cf - . ) | ( cd "$DEPLOYPATH" && tar -xf - )
+          fi
+
+          echo "Done: $(date)"
+        } >> "$LOG" 2>&1
+      '
