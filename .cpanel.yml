@@ -4,7 +4,7 @@ deployment:
     - /bin/bash -lc '
         set -euo pipefail
         DEPLOYPATH="/home/drrootsdc/betaroot"   # change to /home/drrootsdc/public_html/betaroot if that is your web path
-        SOURCE="$PWD"
+        SOURCE="/home/drrootsdc/repositories/betaroot"
         LOG="/home/drrootsdc/deploy.log"
 
         {
