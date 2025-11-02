@@ -3,27 +3,38 @@ deployment:
   tasks:
     - /bin/bash -lc '
         set -euo pipefail
-        DEPLOYPATH="/home/drrootsdc/public_html/betaroot"   # <-- change if needed
+        # <<< set your real deploy path here >>>
+        DEPLOYPATH="/home/drrootsdc/public_html/betaroot"
         SOURCE="$PWD"
         LOG="/home/drrootsdc/deploy.log"
 
         {
-          echo "===== SIMPLE cp DEPLOY $(date) ====="
+          echo "===== FIX v4 $(date) ====="
           echo "SRC: $SOURCE"
           echo "DST: $DEPLOYPATH"
 
-          # Create the destination folder if it doesn't exist
-          mkdir -p "$DEPLOYPATH"
-          chmod 755 "$DEPLOYPATH"
+          # Create destination if missing with 755 perms (mkdir + chmod in one)
+          /usr/bin/install -d -m 755 "$DEPLOYPATH"
 
-          # Remove any unwanted Git metadata before copying
-          rm -rf "$DEPLOYPATH/.git" "$DEPLOYPATH/.cpanel.yml" 2>/dev/null || true
+          # Make sure current user can write inside (keeps outside world at 755)
+          chmod u+rwX "$DEPLOYPATH"
 
-          # Copy everything recursively (-r), preserve attributes (-p),
-          # and overwrite without prompt (-f)
-          /bin/cp -prf "$SOURCE"/* "$DEPLOYPATH"/
+          # Never keep a .git in destination
+          [ -d "$DEPLOYPATH/.git" ] && rm -rf "$DEPLOYPATH/.git"
 
-          echo "Deployed with cp -prf to $DEPLOYPATH"
+          # Prefer rsync if available, else tar fallback; always exclude .git & .cpanel.yml
+          RSYNC="$(command -v rsync || true)"
+          if [ -n "$RSYNC" ]; then
+            echo "Using rsync: $RSYNC"
+            "$RSYNC" -a --delete \
+              --exclude ".git" --exclude ".cpanel.yml" \
+              "$SOURCE"/ "$DEPLOYPATH"/
+          else
+            echo "rsync not found; using tar fallback"
+            find "$DEPLOYPATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            ( cd "$SOURCE" && tar --exclude=.git --exclude=.cpanel.yml -cf - . ) | ( cd "$DEPLOYPATH" && tar -xf - )
+          fi
+
           echo "Done: $(date)"
         } >> "$LOG" 2>&1
       '
