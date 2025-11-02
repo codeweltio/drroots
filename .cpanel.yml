@@ -3,9 +3,9 @@ deployment:
   tasks:
     - /bin/bash -lc '
         set -euo pipefail
-        DEPLOYPATH="/home/drrootsdc/public_html/betaroot"  # <— set your real live path here
+        DEPLOYPATH="/home/drrootsdc/public_html/beta"  # <— set your real live path here
         SOURCE="$PWD"
-        LOG="/home/drrootsdc/deploy.log"
+        LOG="/home/drrootsdc/beta.log"
 
         {
           echo "===== FIX v3 $(date) ====="
