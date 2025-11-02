@@ -3,26 +3,23 @@ deployment:
   tasks:
     - /bin/bash -lc '
         set -euo pipefail
-        # <<< set your real deploy path here >>>
-        DEPLOYPATH="/home/drrootsdc/public_html/betaroot"
+        DEPLOYPATH="/home/drrootsdc/public_html/betaroot"  # <— set your real live path here
         SOURCE="$PWD"
         LOG="/home/drrootsdc/deploy.log"
 
         {
-          echo "===== FIX v4 $(date) ====="
+          echo "===== FIX v3 $(date) ====="
           echo "SRC: $SOURCE"
           echo "DST: $DEPLOYPATH"
 
-          # Create destination if missing with 755 perms (mkdir + chmod in one)
-          /usr/bin/install -d -m 755 "$DEPLOYPATH"
+          # Ensure destination exists and is traversable/writable
+          install -d -m 755 "$DEPLOYPATH"
+          chmod -R u+rwX "$DEPLOYPATH" || true
 
-          # Make sure current user can write inside (keeps outside world at 755)
-          chmod u+rwX "$DEPLOYPATH"
+          # Clean any stray .git in destination
+          [ -d "$DEPLOYPATH/.git" ] && { echo "Removing stray .git"; rm -rf "$DEPLOYPATH/.git"; }
 
-          # Never keep a .git in destination
-          [ -d "$DEPLOYPATH/.git" ] && rm -rf "$DEPLOYPATH/.git"
-
-          # Prefer rsync if available, else tar fallback; always exclude .git & .cpanel.yml
+          # Detect rsync
           RSYNC="$(command -v rsync || true)"
           if [ -n "$RSYNC" ]; then
             echo "Using rsync: $RSYNC"
@@ -31,6 +28,7 @@ deployment:
               "$SOURCE"/ "$DEPLOYPATH"/
           else
             echo "rsync not found; using tar fallback"
+            # If folder was recreated, it may be empty; delete-then-copy is still safe
             find "$DEPLOYPATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
             ( cd "$SOURCE" && tar --exclude=.git --exclude=.cpanel.yml -cf - . ) | ( cd "$DEPLOYPATH" && tar -xf - )
           fi
