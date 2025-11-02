@@ -3,33 +3,38 @@ deployment:
   tasks:
     - /bin/bash -lc '
         set -euo pipefail
-        DEPLOYPATH="/home/drrootsdc/public_html/betaroot"  # <— set your real live path here
-        SOURCE="$PWD"
+        DEPLOYPATH="/home/drrootsdc/betaroot"   # change to /home/drrootsdc/public_html/betaroot if that is your web path
+        SOURCE="/home/drrootsdc/repositories/betaroot"
         LOG="/home/drrootsdc/deploy.log"
 
         {
-          echo "===== FIX v3 $(date) ====="
+          echo "===== FIX v2 $(date) ====="
           echo "SRC: $SOURCE"
           echo "DST: $DEPLOYPATH"
 
-          # Ensure destination exists and is traversable/writable
-          install -d -m 755 "$DEPLOYPATH"
+          # Ensure destination exists and is writable
+          mkdir -p "$DEPLOYPATH"
           chmod -R u+rwX "$DEPLOYPATH" || true
 
-          # Clean any stray .git in destination
-          [ -d "$DEPLOYPATH/.git" ] && { echo "Removing stray .git"; rm -rf "$DEPLOYPATH/.git"; }
+          # Never keep a .git inside the live folder
+          if [ -d "$DEPLOYPATH/.git" ]; then
+            echo "Removing stray .git in destination"
+            rm -rf "$DEPLOYPATH/.git"
+          fi
 
-          # Detect rsync
+          # Use rsync if present (wherever it is), else tar fallback that excludes .git and .cpanel.yml
           RSYNC="$(command -v rsync || true)"
           if [ -n "$RSYNC" ]; then
-            echo "Using rsync: $RSYNC"
+            echo "Using rsync at: $RSYNC"
             "$RSYNC" -a --delete \
-              --exclude ".git" --exclude ".cpanel.yml" \
+              --exclude ".git" \
+              --exclude ".cpanel.yml" \
               "$SOURCE"/ "$DEPLOYPATH"/
           else
             echo "rsync not found; using tar fallback"
-            # If folder was recreated, it may be empty; delete-then-copy is still safe
+            # Wipe current contents (safe sync)
             find "$DEPLOYPATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            # Copy everything except .git and .cpanel.yml
             ( cd "$SOURCE" && tar --exclude=.git --exclude=.cpanel.yml -cf - . ) | ( cd "$DEPLOYPATH" && tar -xf - )
           fi
 
